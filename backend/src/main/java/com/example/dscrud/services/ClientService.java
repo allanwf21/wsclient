@@ -3,21 +3,24 @@ package com.example.dscrud.services;
 import com.example.dscrud.dto.ClientDTO;
 import com.example.dscrud.entities.Client;
 import com.example.dscrud.repositories.ClientRepository;
-import com.example.dscrud.services.exceptions.DatabaseException;
+
 import com.example.dscrud.services.exceptions.ResourceNotFoundException;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataIntegrityViolationException;
+
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+
+@Service
 public class ClientService {
 
-    @Autowired (required=true)
+    @Autowired
     private ClientRepository repository;
 
     @Transactional(readOnly = true)
@@ -41,12 +44,15 @@ public class ClientService {
         return new ClientDTO(entity);
     }
     @Transactional
-    public ClientDTO update(Long id, ClientDTO dto) throws EntityNotFoundException {
-        Client entity = repository.getReferenceById(id);
-        entity.setName(dto.getName());
-        entity = repository.save(entity);
-        return new ClientDTO(entity);
-
+    public ClientDTO update(Long id, ClientDTO dto) {
+        try {
+            Client entity = repository.getReferenceById(id);
+            dtoToEntity(dto, entity);
+            entity = repository.save(entity);
+            return new ClientDTO(entity);
+        } catch (EntityNotFoundException e) {
+            throw new ResourceNotFoundException("Id " + id + " not found");
+        }
     }
 
     @Transactional
@@ -57,9 +63,15 @@ public class ClientService {
         catch (EmptyResultDataAccessException e) {
             throw new ResourceNotFoundException("Id not found " + id);
         }
-        catch (DataIntegrityViolationException e) {
-            throw new DatabaseException("Integrity violation");
-        }
 
+
+    }
+
+    private void dtoToEntity(ClientDTO dto, Client entity){
+        entity.setName(dto.getName());
+        entity.setCpf(dto.getCpf());
+        entity.setIncome(dto.getIncome());
+        entity.setBirthDate(dto.getBirthDate());
+        entity.setChildren(dto.getChildren());
     }
 }
